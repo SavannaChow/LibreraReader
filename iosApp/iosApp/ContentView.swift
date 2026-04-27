@@ -391,24 +391,40 @@ struct ContentView: View {
         .background(Color(PlatformColor.windowBackgroundColor))
     }
     
-    @StateObject private var localSyncManager = LocalSyncManager.shared
+    @StateObject private var webDAVSyncManager = WebDAVSyncManager.shared
     
     private var settingsView: some View {
         Form {
-            Section(header: Text("Google Drive / Local Folder Sync").font(.headline)) {
+            Section(header: Text("WebDAV Bookmark Sync").font(.headline)) {
                 HStack {
-                    Text("Sync Folder:")
-                    Text(localSyncManager.syncFolderURLPath.isEmpty ? "Not Selected" : localSyncManager.syncFolderURLPath)
-                        .foregroundColor(localSyncManager.syncFolderURLPath.isEmpty ? .secondary : .primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button("Select Folder") {
-                        localSyncManager.selectFolder()
-                    }
+                    Text("Server URL:")
+                    TextField("https://example.com/remote.php/dav/files/user/Librera", text: $webDAVSyncManager.serverURL)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                HStack {
+                    Text("Username:")
+                    TextField("Username", text: $webDAVSyncManager.username)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                HStack {
+                    Text("Password:")
+                    SecureField("Password", text: $webDAVSyncManager.password)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                HStack {
+                    Text("Profile:")
+                    TextField("Librera", text: $webDAVSyncManager.profileName)
+                        .textFieldStyle(.roundedBorder)
                 }
                 
-                if let error = localSyncManager.lastSyncError {
+                Text("Remote layout follows Android sync rules: `profile.<name>/device.<name>/app-Bookmarks.json`.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                if let error = webDAVSyncManager.lastSyncError {
                     Text(error)
                         .foregroundColor(.red)
                         .font(.caption)
@@ -418,14 +434,14 @@ struct ContentView: View {
                     Button(action: {
                         syncBookmarks()
                     }) {
-                        if localSyncManager.isSyncing {
+                        if webDAVSyncManager.isSyncing {
                             ProgressView()
                                 .controlSize(.small)
                                 .padding(.trailing, 4)
                         }
-                        Text(localSyncManager.isSyncing ? "Syncing..." : "Sync Now")
+                        Text(webDAVSyncManager.isSyncing ? "Syncing..." : "Sync Now")
                     }
-                    .disabled(!localSyncManager.isConfigured || localSyncManager.isSyncing)
+                    .disabled(!webDAVSyncManager.isConfigured || webDAVSyncManager.isSyncing)
                     #if os(macOS)
                     .buttonStyle(.borderedProminent)
                     #endif
@@ -441,28 +457,26 @@ struct ContentView: View {
     }
     
     private func syncBookmarks() {
-        localSyncManager.isSyncing = true
-        localSyncManager.lastSyncError = nil
-        
-        // Gather local bookmarks
-        let bookPaths = Array(Set((bookManager.books + bookManager.favoriteBooks + bookManager.recentBooks).map { $0.url.path }))
+        webDAVSyncManager.isSyncing = true
+        webDAVSyncManager.lastSyncError = nil
+
+        let bookPaths = bookManager.allKnownBookPaths
         let localBookmarks = BookPreferencesManager.shared.allBookmarks(for: bookPaths)
-        
-        localSyncManager.syncBookmarks(localBookmarks: localBookmarks) { result in
+
+        webDAVSyncManager.syncBookmarks(localBookmarks: localBookmarks, knownBookPaths: bookPaths) { result in
             DispatchQueue.main.async {
-                self.localSyncManager.isSyncing = false
+                self.webDAVSyncManager.isSyncing = false
                 switch result {
                 case .success(let mergedBookmarks):
-                    // Save merged bookmarks locally
-                    for (path, bookmarks) in mergedBookmarks {
+                    for path in bookPaths {
                         var pref = BookPreferencesManager.shared.load(for: path)
-                        pref.bookmarks = bookmarks
+                        pref.bookmarks = mergedBookmarks[path] ?? []
                         BookPreferencesManager.shared.save(pref, for: path)
                     }
-                    // Refresh current view if needed
+
                     self.bookManager.forceUpdate()
                 case .failure(let error):
-                    self.localSyncManager.lastSyncError = error.localizedDescription
+                    self.webDAVSyncManager.lastSyncError = error.localizedDescription
                 }
             }
         }
