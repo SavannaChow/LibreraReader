@@ -553,7 +553,11 @@ public class DocumentWrapperUI {
         }
 
         if (KeyEvent.KEYCODE_F == keyCode) {
-            dc.alignDocument();
+            if (event.isCtrlPressed() || event.isMetaPressed()) {
+                showSearchDialog();
+            } else {
+                dc.alignDocument();
+            }
             return true;
         }
         if (KeyEvent.KEYCODE_L == keyCode) {
