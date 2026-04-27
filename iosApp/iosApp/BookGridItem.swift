@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BookGridItem: View {
     let book: Book
+    let isFavorite: Bool
     @State private var readingProgress: Double = 0
     
     #if os(macOS)
@@ -40,6 +41,16 @@ struct BookGridItem: View {
                     .frame(width: itemWidth, height: itemHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .shadow(radius: 4, y: 2)
+
+                    if isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(.yellow)
+                            .padding(8)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .padding(8)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
                     
                     // Format Badge
                     Text(book.type.rawValue.uppercased())

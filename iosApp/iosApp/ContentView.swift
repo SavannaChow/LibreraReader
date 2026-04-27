@@ -17,18 +17,23 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var sortOption: SortOption = .date
     @State private var sortOrder: SortOrder = .descending
+    @AppStorage("library_display_mode") private var displayModeRawValue = LibraryDisplayMode.cover.rawValue
     @Environment(\.openWindow) private var openWindow
     @State private var selectedBookData: ReaderWindowData?
     @State private var isShowingFolderPicker = false
     
     enum NavigationCategory: String, CaseIterable, Identifiable {
         case library = "All Books"
+        case bookmarks = "Bookmarks"
+        case favorites = "Favorites"
         case recent = "Recent Books"
         case about = "About"
         var id: String { rawValue }
         var icon: String {
             switch self {
             case .library: return "books.vertical"
+            case .bookmarks: return "bookmark"
+            case .favorites: return "star"
             case .recent: return "clock"
             case .about: return "info.circle"
             }
@@ -47,6 +52,29 @@ struct ContentView: View {
             self == .ascending ? "arrow.up" : "arrow.down"
         }
     }
+
+    enum LibraryDisplayMode: String, CaseIterable, Identifiable {
+        case cover = "Cover"
+        case list = "List"
+        case compact = "Checklist"
+        case table = "Table"
+
+        var id: String { rawValue }
+
+        var icon: String {
+            switch self {
+            case .cover: return "square.grid.2x2"
+            case .list: return "list.bullet"
+            case .compact: return "checklist"
+            case .table: return "tablecells"
+            }
+        }
+    }
+
+    private var displayMode: LibraryDisplayMode {
+        get { LibraryDisplayMode(rawValue: displayModeRawValue) ?? .cover }
+        set { displayModeRawValue = newValue.rawValue }
+    }
     
     private var columns: [GridItem] {
         #if os(macOS)
@@ -54,6 +82,21 @@ struct ContentView: View {
         #else
         [GridItem(.adaptive(minimum: 100), spacing: 10)]
         #endif
+    }
+
+    private func categoryCount(_ category: NavigationCategory) -> Int {
+        switch category {
+        case .library:
+            return bookManager.books.count
+        case .bookmarks:
+            return bookManager.bookmarkEntries.count
+        case .favorites:
+            return bookManager.favoriteBooks.count
+        case .recent:
+            return bookManager.recentBooks.count
+        case .about:
+            return 0
+        }
     }
     
     var body: some View {
@@ -63,8 +106,7 @@ struct ContentView: View {
                     HStack {
                         Label(category.rawValue, systemImage: category.icon)
                         Spacer()
-                        let count = category == .library ? bookManager.books.count : bookManager.recentBooks.count
-                        Text("\(count)")
+                        Text("\(categoryCount(category))")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                             .padding(.horizontal, 6)
@@ -91,6 +133,10 @@ struct ContentView: View {
                     switch category {
                     case .library:
                         libraryView
+                    case .bookmarks:
+                        bookmarksView
+                    case .favorites:
+                        favoritesView
                     case .recent:
                         recentView
                     case .about:
@@ -108,7 +154,8 @@ struct ContentView: View {
                 url: data.url,
                 rootURL: data.rootURL,
                 title: data.title,
-                bookPath: data.bookPath
+                bookPath: data.bookPath,
+                initialJumpToProgress: data.jumpToProgress
             )
         }
         #else
@@ -117,7 +164,8 @@ struct ContentView: View {
                 url: data.url,
                 rootURL: data.rootURL,
                 title: data.title,
-                bookPath: data.bookPath
+                bookPath: data.bookPath,
+                initialJumpToProgress: data.jumpToProgress
             )
         }
         #endif
@@ -202,6 +250,18 @@ struct ContentView: View {
                 
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
+                        Picker("Display Mode", selection: $displayModeRawValue) {
+                            ForEach(LibraryDisplayMode.allCases) { mode in
+                                Label(mode.rawValue, systemImage: mode.icon).tag(mode.rawValue)
+                            }
+                        }
+                    } label: {
+                        Label("Display", systemImage: displayMode.icon)
+                    }
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
                         Picker("Sort By", selection: $sortOption) {
                             ForEach(SortOption.allCases) { option in
                                 Text(option.rawValue).tag(option)
@@ -229,6 +289,47 @@ struct ContentView: View {
                 }
                 #endif
             }
+    }
+
+    private var favoritesView: some View {
+        bookListView(books: bookManager.favoriteBooks, title: "Favorites", isRecent: false)
+    }
+
+    private var bookmarksView: some View {
+        let filteredBookmarks = bookManager.bookmarkEntries.filter { entry in
+            searchText.isEmpty
+                || entry.bookTitle.localizedCaseInsensitiveContains(searchText)
+                || entry.bookmark.text.localizedCaseInsensitiveContains(searchText)
+                || entry.bookmark.tag.localizedCaseInsensitiveContains(searchText)
+        }
+
+        return Group {
+            if filteredBookmarks.isEmpty {
+                ContentUnavailableView(
+                    searchText.isEmpty ? "No Bookmarks" : "No Matching Bookmarks",
+                    systemImage: "bookmark.slash",
+                    description: Text(searchText.isEmpty ? "Bookmarks you create while reading will appear here." : "Try searching by book title, bookmark text, or tag.")
+                )
+            } else {
+                List(filteredBookmarks) { entry in
+                    Button {
+                        openBookmark(entry)
+                    } label: {
+                        BookmarkLibraryRow(entry: entry)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button("Open Bookmark") {
+                            openBookmark(entry)
+                        }
+                        Button("Open Book") {
+                            openBook(bookForPath(entry.bookPath))
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Bookmarks")
     }
     
     private var recentView: some View {
@@ -305,7 +406,7 @@ struct ContentView: View {
             searchText.isEmpty || $0.title.localizedCaseInsensitiveContains(searchText)
         }
         
-        return ScrollView {
+        return Group {
             if bookManager.isLoading {
                 ProgressView("Scanning Library...")
                     .controlSize(.large)
@@ -341,40 +442,127 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
             } else {
-                LazyVGrid(columns: columns, spacing: 24) {
-                    ForEach(filteredBooks) { book in
-                        BookGridItem(book: book)
+                switch displayMode {
+                case .cover:
+                    ScrollView {
+                        LazyVGrid(columns: columns, spacing: 24) {
+                            ForEach(filteredBooks) { book in
+                                BookGridItem(book: book, isFavorite: bookManager.isFavorite(book))
+                                    .onTapGesture {
+                                        openBook(book)
+                                    }
+                                    .contextMenu {
+                                        bookContextMenu(for: book)
+                                    }
+                            }
+                        }
+                        .padding()
+                    }
+                case .list:
+                    List(filteredBooks) { book in
+                        BookListRow(book: book, isFavorite: bookManager.isFavorite(book))
+                            .contentShape(Rectangle())
                             .onTapGesture {
                                 openBook(book)
                             }
                             .contextMenu {
-                                Button("Open") {
-                                    openBook(book)
-                                }
-                                #if os(macOS)
-                                Button("Show in Finder") {
-                                    NSWorkspace.shared.activateFileViewerSelecting([book.url])
-                                }
-                                #endif
+                                bookContextMenu(for: book)
                             }
                     }
+                case .compact:
+                    List(filteredBooks) { book in
+                        CompactBookRow(
+                            book: book,
+                            isFavorite: bookManager.isFavorite(book),
+                            onToggleFavorite: { bookManager.toggleFavorite(book) })
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            openBook(book)
+                        }
+                        .contextMenu {
+                            bookContextMenu(for: book)
+                        }
+                    }
+                case .table:
+                    #if os(macOS)
+                    Table(filteredBooks) {
+                        TableColumn("Title") { book in
+                            Button(book.title) {
+                                openBook(book)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        TableColumn("Type") { book in
+                            Text(book.type.rawValue.uppercased())
+                        }
+                        TableColumn("Date") { book in
+                            Text(book.date, style: .date)
+                        }
+                        TableColumn("Progress") { book in
+                            Text("\(Int(BookPreferencesManager.shared.load(for: book.url.path).scrollProgress * 100))%")
+                        }
+                        TableColumn("Favorite") { book in
+                            Button {
+                                bookManager.toggleFavorite(book)
+                            } label: {
+                                Image(systemName: bookManager.isFavorite(book) ? "star.fill" : "star")
+                                    .foregroundColor(bookManager.isFavorite(book) ? .yellow : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    #else
+                    List(filteredBooks) { book in
+                        BookListRow(book: book, isFavorite: bookManager.isFavorite(book))
+                    }
+                    #endif
                 }
-                .padding()
             }
         }
         .navigationTitle(title)
     }
-    
-    private func openBook(_ book: Book) {
+
+    @ViewBuilder
+    private func bookContextMenu(for book: Book) -> some View {
+        Button("Open") {
+            openBook(book)
+        }
+        Button(bookManager.isFavorite(book) ? "Remove from Favorites" : "Add to Favorites") {
+            bookManager.toggleFavorite(book)
+        }
+        #if os(macOS)
+        Button("Show in Finder") {
+            NSWorkspace.shared.activateFileViewerSelecting([book.url])
+        }
+        #endif
+    }
+
+    private func bookForPath(_ path: String) -> Book {
+        booksForLookup.first(where: { $0.url.path == path }) ?? Book(url: URL(fileURLWithPath: path))
+    }
+
+    private var booksForLookup: [Book] {
+        var seen = Set<String>()
+        return (bookManager.books + bookManager.favoriteBooks + bookManager.recentBooks).filter { book in
+            seen.insert(book.url.path).inserted
+        }
+    }
+
+    private func openBookmark(_ entry: LibraryBookmarkEntry) {
+        openBook(bookForPath(entry.bookPath), jumpToProgress: entry.bookmark.progress)
+    }
+
+    private func openBook(_ book: Book, jumpToProgress: Double?) {
         // Track recent
         bookManager.addToRecents(book)
-        
+
         if book.type == .pdf {
             let data = ReaderWindowData(
                 url: book.url,
                 rootURL: book.url.deletingLastPathComponent(),
                 title: book.title,
-                bookPath: book.url.path
+                bookPath: book.url.path,
+                jumpToProgress: jumpToProgress
             )
             #if os(macOS)
             openWindow(value: data)
@@ -410,7 +598,8 @@ struct ContentView: View {
                             url: readerURL,
                             rootURL: rootURL,
                             title: book.title,
-                            bookPath: book.url.path
+                            bookPath: book.url.path,
+                            jumpToProgress: jumpToProgress
                         )
                         #if os(macOS)
                         openWindow(value: data)
@@ -438,6 +627,111 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private func openBook(_ book: Book) {
+        openBook(book, jumpToProgress: nil)
+    }
+}
+
+private struct BookListRow: View {
+    let book: Book
+    let isFavorite: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: iconName)
+                .font(.title2)
+                .frame(width: 28)
+                .foregroundColor(.accentColor)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(book.title)
+                    .fontWeight(.medium)
+                Text(book.type.rawValue.uppercased())
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            if isFavorite {
+                Image(systemName: "star.fill")
+                    .foregroundColor(.yellow)
+            }
+            Text(book.date, style: .date)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var iconName: String {
+        book.type == .pdf ? "doc.richtext" : "books.vertical"
+    }
+}
+
+private struct CompactBookRow: View {
+    let book: Book
+    let isFavorite: Bool
+    let onToggleFavorite: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button(action: onToggleFavorite) {
+                Image(systemName: isFavorite ? "star.fill" : "star")
+                    .foregroundColor(isFavorite ? .yellow : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(book.title)
+                    .font(.body)
+                Text(book.type.rawValue.uppercased())
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Text("\(Int(BookPreferencesManager.shared.load(for: book.url.path).scrollProgress * 100))%")
+                .foregroundColor(.secondary)
+                .font(.caption)
+        }
+    }
+}
+
+private struct BookmarkLibraryRow: View {
+    let entry: LibraryBookmarkEntry
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: entry.bookmark.isFloating ? "bookmark.fill" : "bookmark")
+                .foregroundColor(entry.bookmark.isFloating ? .accentColor : .secondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(entry.bookTitle)
+                        .font(.headline)
+                    if !entry.bookmark.tag.isEmpty {
+                        Text("#\(entry.bookmark.tag)")
+                            .font(.caption)
+                            .foregroundColor(.accentColor)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Text(entry.bookmark.text)
+                    .lineLimit(2)
+
+                HStack(spacing: 10) {
+                    Text("Position \(Int(entry.bookmark.progress * 100))%")
+                    Text(entry.bookmark.createdAt, style: .date)
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 }
 

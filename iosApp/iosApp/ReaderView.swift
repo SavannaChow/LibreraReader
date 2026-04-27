@@ -2,6 +2,17 @@ import SwiftUI
 import WebKit
 import PDFKit
 
+struct ReaderSearchResult: Identifiable, Hashable {
+    let id: UUID = UUID()
+    let displayPage: String
+    let snippet: String
+    let progress: Double
+    let exactScrollTop: Double?
+    let pdfPageIndex: Int?
+    let pdfPointX: Double?
+    let pdfPointY: Double?
+}
+
 #if os(macOS)
 typealias NativeView = NSView
 protocol PlatformRepresentable: NSViewRepresentable {
@@ -21,7 +32,15 @@ struct ReaderView: PlatformRepresentable {
     let rootURL: URL
     let settings: ReaderSettings
     let initialScrollProgress: Double
+    let jumpToProgress: Double?
+    let jumpToken: UUID?
+    let searchJumpResult: ReaderSearchResult?
+    let searchJumpToken: UUID?
+    let searchQuery: String
+    let searchToken: UUID?
+    let onSearchResults: ([ReaderSearchResult]) -> Void
     @Binding var scrollProgress: Double
+    @Binding var selectedText: String
     
     private var isPDF: Bool {
         url.pathExtension.lowercased() == "pdf"
@@ -31,6 +50,9 @@ struct ReaderView: PlatformRepresentable {
         var parent: ReaderView
         var hasLoadedContent = false
         var savedInitialProgress: Double = 0.0
+        var lastAppliedJumpToken: UUID?
+        var lastAppliedSearchToken: UUID?
+        var lastAppliedSearchJumpToken: UUID?
         var pdfView: PDFView?
         var observers: [Any] = []
         #if os(macOS)
@@ -82,6 +104,7 @@ struct ReaderView: PlatformRepresentable {
             }
             
             setupWebViewScrollTracking(webView)
+            setupWebViewSelectionTracking(webView)
         }
         
         func setupWebViewScrollTracking(_ webView: WKWebView) {
@@ -256,6 +279,32 @@ struct ReaderView: PlatformRepresentable {
             }
             #endif
         }
+
+        func setupWebViewSelectionTracking(_ webView: WKWebView) {
+            let js = """
+            (function() {
+                if (window.__libreraSelectionTrackingInstalled) {
+                    return;
+                }
+                window.__libreraSelectionTrackingInstalled = true;
+
+                function reportSelection() {
+                    var selection = window.getSelection ? window.getSelection().toString() : "";
+                    try {
+                        window.webkit.messageHandlers.selectionHandler.postMessage(selection.trim());
+                    } catch (e) {}
+                }
+
+                document.addEventListener('selectionchange', function() {
+                    window.setTimeout(reportSelection, 0);
+                });
+                document.addEventListener('mouseup', reportSelection);
+                document.addEventListener('keyup', reportSelection);
+                reportSelection();
+            })();
+            """
+            webView.evaluateJavaScript(js, completionHandler: nil)
+        }
         
         // MARK: - PDFView Tracking
         
@@ -265,14 +314,24 @@ struct ReaderView: PlatformRepresentable {
             #if os(macOS)
             // Listen for scroll notifications from the inner scroll view
             if let scrollView = pdfView.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView {
-                let observer = NotificationCenter.default.addObserver(
+            let observer = NotificationCenter.default.addObserver(
                     forName: NSView.boundsDidChangeNotification,
                     object: scrollView.contentView,
                     queue: .main
                 ) { [weak self] _ in
                     self?.updatePDFProgress()
                 }
-                observers.append(observer)
+            observers.append(observer)
+
+            let selectionObserver = NotificationCenter.default.addObserver(
+                forName: Notification.Name.PDFViewSelectionChanged,
+                object: pdfView,
+                queue: .main
+            ) { [weak self, weak pdfView] _ in
+                guard let self, let pdfView else { return }
+                self.parent.selectedText = pdfView.currentSelection?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            }
+            observers.append(selectionObserver)
             }
             
             // Handle arrow keys for PDF
@@ -320,6 +379,16 @@ struct ReaderView: PlatformRepresentable {
                 self?.updatePDFProgress()
             }
             observers.append(pageObserver)
+
+            let selectionObserver = NotificationCenter.default.addObserver(
+                forName: Notification.Name.PDFViewSelectionChanged,
+                object: pdfView,
+                queue: .main
+            ) { [weak self, weak pdfView] _ in
+                guard let self, let pdfView else { return }
+                self.parent.selectedText = pdfView.currentSelection?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            }
+            observers.append(selectionObserver)
             
             // For continuous scrolling on iOS, we use KVO on contentOffset
             if let scrollView = pdfView.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView {
@@ -409,6 +478,274 @@ struct ReaderView: PlatformRepresentable {
                 #endif
             }
         }
+
+        func applyJumpIfNeeded(in view: NativeView) {
+            guard let jumpToken = parent.jumpToken, lastAppliedJumpToken != jumpToken else {
+                return
+            }
+            lastAppliedJumpToken = jumpToken
+            let targetProgress = min(1.0, max(0.0, parent.jumpToProgress ?? 0.0))
+
+            if let pdfView = pdfView {
+                scrollPDF(to: targetProgress, pdfView: pdfView)
+            } else if let webView = view.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
+                scrollWebView(to: targetProgress, webView: webView)
+            }
+        }
+
+        func applySearchJumpIfNeeded(in view: NativeView) {
+            guard let searchJumpToken = parent.searchJumpToken, lastAppliedSearchJumpToken != searchJumpToken else {
+                return
+            }
+            lastAppliedSearchJumpToken = searchJumpToken
+            guard let result = parent.searchJumpResult else { return }
+
+            if let pdfView = pdfView {
+                scrollPDF(to: result, pdfView: pdfView)
+            } else if let webView = view.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
+                scrollWebView(to: result, webView: webView)
+            }
+        }
+
+        private func scrollPDF(to progress: Double, pdfView: PDFView) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                #if os(macOS)
+                if let scrollView = pdfView.subviews.first(where: { $0 is NSScrollView }) as? NSScrollView {
+                    let docHeight = scrollView.documentView?.frame.height ?? 0
+                    let viewHeight = scrollView.contentView.documentVisibleRect.height
+                    let scrollTop = (1.0 - progress) * max(0, docHeight - viewHeight)
+                    scrollView.contentView.animator().scroll(to: CGPoint(x: 0, y: scrollTop))
+                    scrollView.reflectScrolledClipView(scrollView.contentView)
+                }
+                #else
+                if let scrollView = pdfView.subviews.first(where: { $0 is UIScrollView }) as? UIScrollView {
+                    let contentHeight = scrollView.contentSize.height
+                    let viewHeight = scrollView.bounds.height
+                    let scrollTop = progress * max(0, contentHeight - viewHeight)
+                    scrollView.setContentOffset(CGPoint(x: 0, y: scrollTop), animated: true)
+                }
+                #endif
+            }
+        }
+
+        private func scrollWebView(to progress: Double, webView: WKWebView) {
+            let js = """
+            (function() {
+                var docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+                var viewHeight = window.innerHeight;
+                var scrollTop = \(progress) * Math.max(0, docHeight - viewHeight);
+                window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+            })();
+            """
+            webView.evaluateJavaScript(js, completionHandler: nil)
+        }
+
+        private func scrollPDF(to result: ReaderSearchResult, pdfView: PDFView) {
+            guard
+                let document = pdfView.document,
+                let pageIndex = result.pdfPageIndex,
+                let page = document.page(at: pageIndex),
+                let pointX = result.pdfPointX,
+                let pointY = result.pdfPointY
+            else {
+                scrollPDF(to: result.progress, pdfView: pdfView)
+                return
+            }
+
+            let point = CGPoint(x: pointX, y: pointY)
+            let destination = PDFDestination(page: page, at: point)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                pdfView.go(to: destination)
+            }
+        }
+
+        private func scrollWebView(to result: ReaderSearchResult, webView: WKWebView) {
+            if let exactScrollTop = result.exactScrollTop {
+                let js = """
+                (function() {
+                    window.scrollTo({ top: \(exactScrollTop), behavior: 'smooth' });
+                })();
+                """
+                webView.evaluateJavaScript(js, completionHandler: nil)
+            } else {
+                scrollWebView(to: result.progress, webView: webView)
+            }
+        }
+
+        func applySearchIfNeeded(in view: NativeView) {
+            guard let searchToken = parent.searchToken, lastAppliedSearchToken != searchToken else {
+                return
+            }
+            lastAppliedSearchToken = searchToken
+            performSearch(query: parent.searchQuery, in: view)
+        }
+
+        private func performSearch(query: String, in view: NativeView) {
+            let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedQuery.isEmpty else {
+                DispatchQueue.main.async {
+                    self.parent.onSearchResults([])
+                }
+                return
+            }
+
+            if let pdfView = pdfView {
+                let results = searchPDF(query: trimmedQuery, in: pdfView)
+                DispatchQueue.main.async {
+                    self.parent.onSearchResults(results)
+                }
+            } else if let webView = view.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
+                searchWebView(query: trimmedQuery, webView: webView)
+            }
+        }
+
+        private func searchPDF(query: String, in pdfView: PDFView) -> [ReaderSearchResult] {
+            guard let document = pdfView.document else { return [] }
+
+            let needle = query.lowercased()
+            var results: [ReaderSearchResult] = []
+
+            for pageIndex in 0..<document.pageCount {
+                guard let page = document.page(at: pageIndex), let pageText = page.string, !pageText.isEmpty else {
+                    continue
+                }
+
+                let lowercasedText = pageText.lowercased()
+                var searchRange = lowercasedText.startIndex..<lowercasedText.endIndex
+
+                while let foundRange = lowercasedText.range(of: needle, options: [], range: searchRange) {
+                    let snippet = snippetAround(range: foundRange, in: pageText)
+                    let progress = document.pageCount > 1 ? Double(pageIndex) / Double(document.pageCount - 1) : 0
+                    let nsRange = NSRange(foundRange, in: pageText)
+                    let selectionBounds = page.selection(for: nsRange)?.bounds(for: page)
+                    let pageBounds = page.bounds(for: pdfView.displayBox)
+                    let destinationPoint = selectionBounds.map {
+                        CGPoint(
+                            x: max(pageBounds.minX, $0.minX),
+                            y: min(pageBounds.maxY, $0.maxY + 24)
+                        )
+                    }
+                    results.append(
+                        ReaderSearchResult(
+                            displayPage: "Page \(pageIndex + 1)",
+                            snippet: snippet,
+                            progress: progress,
+                            exactScrollTop: nil,
+                            pdfPageIndex: pageIndex,
+                            pdfPointX: destinationPoint.map { Double($0.x) },
+                            pdfPointY: destinationPoint.map { Double($0.y) }
+                        )
+                    )
+
+                    if results.count >= 200 {
+                        return results
+                    }
+
+                    searchRange = foundRange.upperBound..<lowercasedText.endIndex
+                }
+            }
+
+            return results
+        }
+
+        private func searchWebView(query: String, webView: WKWebView) {
+            let escapedQuery = query
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
+                .replacingOccurrences(of: "\n", with: " ")
+
+            let js = """
+            (function() {
+                const query = "\(escapedQuery)".trim().toLowerCase();
+                if (!query) { return []; }
+
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                const results = [];
+                const docHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+                const viewHeight = Math.max(window.innerHeight, 1);
+                const totalPages = Math.max(1, Math.ceil(docHeight / viewHeight));
+
+                function clamp(value, min, max) {
+                    return Math.min(max, Math.max(min, value));
+                }
+
+                function snippet(text, index, length) {
+                    const start = Math.max(0, index - 40);
+                    const end = Math.min(text.length, index + length + 60);
+                    return text.slice(start, end).replace(/\\s+/g, " ").trim();
+                }
+
+                while (walker.nextNode()) {
+                    const node = walker.currentNode;
+                    const text = node.textContent || "";
+                    const lower = text.toLowerCase();
+                    let fromIndex = 0;
+
+                    while (fromIndex < lower.length) {
+                        const matchIndex = lower.indexOf(query, fromIndex);
+                        if (matchIndex === -1) { break; }
+
+                        const range = document.createRange();
+                        range.setStart(node, matchIndex);
+                        range.setEnd(node, matchIndex + query.length);
+
+                        const rect = range.getBoundingClientRect();
+                        const absoluteTop = rect.top + window.scrollY;
+                        const progress = docHeight > viewHeight ? clamp(absoluteTop / Math.max(1, docHeight - viewHeight), 0, 1) : 0;
+                        const exactScrollTop = Math.max(0, absoluteTop - (viewHeight * 0.2));
+                        const pageNumber = clamp(Math.floor(absoluteTop / viewHeight) + 1, 1, totalPages);
+
+                        results.push({
+                            page: "Page " + pageNumber,
+                            snippet: snippet(text, matchIndex, query.length),
+                            progress: progress,
+                            exactScrollTop: exactScrollTop
+                        });
+
+                        if (results.length >= 200) {
+                            return results;
+                        }
+
+                        fromIndex = matchIndex + query.length;
+                    }
+                }
+
+                return results;
+            })();
+            """
+
+            webView.evaluateJavaScript(js) { [weak self] value, _ in
+                guard let self else { return }
+                let results = (value as? [[String: Any]])?.compactMap { item -> ReaderSearchResult? in
+                    guard
+                        let page = item["page"] as? String,
+                        let snippet = item["snippet"] as? String,
+                        let progress = item["progress"] as? Double
+                    else {
+                        return nil
+                    }
+                    return ReaderSearchResult(
+                        displayPage: page,
+                        snippet: snippet,
+                        progress: progress,
+                        exactScrollTop: item["exactScrollTop"] as? Double,
+                        pdfPageIndex: nil,
+                        pdfPointX: nil,
+                        pdfPointY: nil
+                    )
+                } ?? []
+
+                DispatchQueue.main.async {
+                    self.parent.onSearchResults(results)
+                }
+            }
+        }
+
+        private func snippetAround(range: Range<String.Index>, in text: String) -> String {
+            let start = text.index(range.lowerBound, offsetBy: -40, limitedBy: text.startIndex) ?? text.startIndex
+            let end = text.index(range.upperBound, offsetBy: 60, limitedBy: text.endIndex) ?? text.endIndex
+            return text[start..<end].replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -452,6 +789,11 @@ struct ReaderView: PlatformRepresentable {
             }
             config.userContentController.add(scrollHandler, name: "scrollHandler")
             config.userContentController.add(LogMessageHandler(), name: "logHandler")
+            config.userContentController.add(SelectionMessageHandler { text in
+                DispatchQueue.main.async {
+                    context.coordinator.parent.selectedText = text
+                }
+            }, name: "selectionHandler")
             
             let webView = WKWebView(frame: .zero, configuration: config)
             webView.navigationDelegate = context.coordinator
@@ -483,6 +825,9 @@ struct ReaderView: PlatformRepresentable {
         if !isPDF, let webView = nsView.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
             applySettings(to: webView, preserveScroll: true)
         }
+        context.coordinator.applyJumpIfNeeded(in: nsView)
+        context.coordinator.applySearchJumpIfNeeded(in: nsView)
+        context.coordinator.applySearchIfNeeded(in: nsView)
     }
     #else
     func makeUIView(context: Context) -> UIView { createView(context: context) }
@@ -491,6 +836,9 @@ struct ReaderView: PlatformRepresentable {
         if !isPDF, let webView = uiView.subviews.first(where: { $0 is WKWebView }) as? WKWebView {
             applySettings(to: webView, preserveScroll: true)
         }
+        context.coordinator.applyJumpIfNeeded(in: uiView)
+        context.coordinator.applySearchJumpIfNeeded(in: uiView)
+        context.coordinator.applySearchIfNeeded(in: uiView)
     }
     #endif
     
@@ -556,5 +904,15 @@ class ScrollMessageHandler: NSObject, WKScriptMessageHandler {
 class LogMessageHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         print("JS Log: \(message.body)")
+    }
+}
+
+class SelectionMessageHandler: NSObject, WKScriptMessageHandler {
+    let onSelection: (String) -> Void
+    init(onSelection: @escaping (String) -> Void) { self.onSelection = onSelection }
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if let text = message.body as? String {
+            onSelection(text)
+        }
     }
 }

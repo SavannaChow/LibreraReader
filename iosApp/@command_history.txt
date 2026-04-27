@@ -1,0 +1,3 @@
+[2026-04-27 13:12:04] [from Darwin SavannaMacBookPro-9.local]  3718  cd '/Users/savannachow/Github/LibreraReader/iosApp/'
+[2026-04-27 13:12:48] [from Darwin SavannaMacBookPro-9.local]  3719  ./build.sh
+[2026-04-27 13:12:48] [from Darwin SavannaMacBookPro-9.local]  3719  ./build.sh

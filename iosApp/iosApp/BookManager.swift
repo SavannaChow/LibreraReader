@@ -1,6 +1,20 @@
 import SwiftUI
 import Combine
 
+struct LibraryBookmarkEntry: Identifiable, Hashable {
+    let id: String
+    let bookPath: String
+    let bookTitle: String
+    let bookmark: BookBookmark
+
+    init(bookPath: String, bookTitle: String, bookmark: BookBookmark) {
+        self.id = "\(bookPath)::\(bookmark.id.uuidString)"
+        self.bookPath = bookPath
+        self.bookTitle = bookTitle
+        self.bookmark = bookmark
+    }
+}
+
 @Observable
 class BookManager {
     static let shared = BookManager() // Singleton for app-level URL handling and shared state
@@ -9,17 +23,24 @@ class BookManager {
     var currentFolderURL: URL?
     var isLoading: Bool = false
     var recentBookPaths: [String] = []
+    var favoriteBookPaths: [String] = []
     var requestToOpenURL: URL?
     
     private let bookmarkKey = "LastOpenedFolderBookmark"
     private let recentBooksKey = "RecentBookPaths"
+    private let favoriteBooksKey = "FavoriteBookPaths"
     
     init() {
         loadRecentBookPaths()
+        loadFavoriteBookPaths()
     }
     
     private func loadRecentBookPaths() {
         recentBookPaths = UserDefaults.standard.stringArray(forKey: recentBooksKey) ?? []
+    }
+
+    private func loadFavoriteBookPaths() {
+        favoriteBookPaths = UserDefaults.standard.stringArray(forKey: favoriteBooksKey) ?? []
     }
     
     func addToRecents(_ book: Book) {
@@ -50,6 +71,51 @@ class BookManager {
             }
             // Otherwise create a temporary one (it will eventually get a thumbnail if we re-scan)
             return Book(url: url)
+        }
+    }
+
+    var favoriteBooks: [Book] {
+        favoriteBookPaths.compactMap { path in
+            let url = URL(fileURLWithPath: path)
+            if let existing = books.firstIndex(where: { $0.url.path == path }) {
+                return books[existing]
+            }
+            return Book(url: url)
+        }
+    }
+
+    func isFavorite(_ book: Book) -> Bool {
+        favoriteBookPaths.contains(book.url.path)
+    }
+
+    func toggleFavorite(_ book: Book) {
+        let path = book.url.path
+        if let index = favoriteBookPaths.firstIndex(of: path) {
+            favoriteBookPaths.remove(at: index)
+        } else {
+            favoriteBookPaths.insert(path, at: 0)
+        }
+        UserDefaults.standard.set(favoriteBookPaths, forKey: favoriteBooksKey)
+        NotificationCenter.default.post(name: .favoritesChanged, object: path)
+    }
+
+    var allKnownBookPaths: [String] {
+        let ordered = books.map(\.url.path) + recentBookPaths + favoriteBookPaths
+        var seen = Set<String>()
+        return ordered.filter { seen.insert($0).inserted }
+    }
+
+    var bookmarkEntries: [LibraryBookmarkEntry] {
+        let bookmarksByPath = BookPreferencesManager.shared.allBookmarks(for: allKnownBookPaths)
+        return allKnownBookPaths.flatMap { path in
+            let title = books.first(where: { $0.url.path == path })?.title
+                ?? URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+            return (bookmarksByPath[path] ?? []).map { bookmark in
+                LibraryBookmarkEntry(bookPath: path, bookTitle: title, bookmark: bookmark)
+            }
+        }
+        .sorted { lhs, rhs in
+            lhs.bookmark.createdAt > rhs.bookmark.createdAt
         }
     }
     

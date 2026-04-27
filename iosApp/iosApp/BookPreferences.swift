@@ -1,5 +1,14 @@
 import Foundation
 
+struct BookBookmark: Codable, Identifiable, Hashable {
+    var id: UUID = UUID()
+    var text: String
+    var tag: String = ""
+    var progress: Double
+    var isFloating: Bool = false
+    var createdAt: Date = Date()
+}
+
 struct BookPreference: Codable {
     var fontSize: Double = 22.0
     var fontFamily: String = "Serif"
@@ -7,6 +16,7 @@ struct BookPreference: Codable {
     var textAlignmentName: String = "justify"
     var hyphenationLanguageCode: String = "auto"
     var scrollProgress: Double = 0.0
+    var bookmarks: [BookBookmark] = []
     
     var theme: ReaderSettings.ReaderTheme {
         get { ReaderSettings.ReaderTheme(rawValue: themeName) ?? .white }
@@ -73,10 +83,44 @@ class BookPreferencesManager {
             userDefaults.set(data, forKey: key)
             // Notify that progress might have changed
             NotificationCenter.default.post(name: .bookProgressChanged, object: bookPath)
+            NotificationCenter.default.post(name: .bookmarksChanged, object: bookPath)
         }
+    }
+
+    func addBookmark(_ bookmark: BookBookmark, for bookPath: String) {
+        var preference = load(for: bookPath)
+        preference.bookmarks.append(bookmark)
+        preference.bookmarks.sort { $0.createdAt > $1.createdAt }
+        save(preference, for: bookPath)
+    }
+
+    func updateBookmark(_ bookmark: BookBookmark, for bookPath: String) {
+        var preference = load(for: bookPath)
+        if let index = preference.bookmarks.firstIndex(where: { $0.id == bookmark.id }) {
+            preference.bookmarks[index] = bookmark
+            save(preference, for: bookPath)
+        }
+    }
+
+    func deleteBookmark(_ bookmarkID: UUID, for bookPath: String) {
+        var preference = load(for: bookPath)
+        preference.bookmarks.removeAll { $0.id == bookmarkID }
+        save(preference, for: bookPath)
+    }
+
+    func bookmarks(for bookPath: String) -> [BookBookmark] {
+        load(for: bookPath).bookmarks.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func allBookmarks(for bookPaths: [String]) -> [String: [BookBookmark]] {
+        Dictionary(uniqueKeysWithValues: bookPaths.map { path in
+            (path, bookmarks(for: path))
+        })
     }
 }
 
 extension Notification.Name {
     static let bookProgressChanged = Notification.Name("bookProgressChanged")
+    static let bookmarksChanged = Notification.Name("bookmarksChanged")
+    static let favoritesChanged = Notification.Name("favoritesChanged")
 }

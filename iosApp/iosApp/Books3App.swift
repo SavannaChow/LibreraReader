@@ -23,7 +23,8 @@ struct LibreraMacApp: App {
                     url: data.url,
                     rootURL: data.rootURL,
                     title: data.title,
-                    bookPath: data.bookPath
+                    bookPath: data.bookPath,
+                    initialJumpToProgress: data.jumpToProgress
                 )
             }
         }
@@ -37,6 +38,10 @@ struct ReaderWindowData: Codable, Hashable, Identifiable {
     let rootURL: URL
     let title: String
     let bookPath: String
-    
-    var id: String { url.absoluteString }
+    let jumpToProgress: Double?
+
+    var id: String {
+        let jumpComponent = jumpToProgress.map { String(format: "%.6f", $0) } ?? "none"
+        return "\(url.absoluteString)#\(jumpComponent)"
+    }
 }
