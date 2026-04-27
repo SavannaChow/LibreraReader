@@ -1,0 +1,12 @@
+{
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/libmobi-swift/Sources/libmobi/Mobi+Errors.swift" : {
+    "abi-baseline-json" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi.abi.json",
+    "const-values" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi-primary.swiftconstvalues",
+    "dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi-primary.d",
+    "diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi-primary.dia",
+    "objc-header" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi-Swift.h",
+    "swiftdoc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi.swiftdoc",
+    "swiftmodule" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi.swiftmodule",
+    "swiftsourceinfo" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/libmobi.build/Release/libmobi.build/Objects-normal/arm64/libmobi.swiftsourceinfo"
+  }
+}

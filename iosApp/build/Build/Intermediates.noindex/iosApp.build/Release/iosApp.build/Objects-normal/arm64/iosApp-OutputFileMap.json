@@ -1,0 +1,101 @@
+{
+  "" : {
+    "const-values" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary.swiftconstvalues",
+    "dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary.d",
+    "diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary.dia",
+    "emit-module-dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary-emit-module.dia",
+    "pch" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iosApp-primary.swiftdeps"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/Book.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Book.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Book.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Book.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/BookGridItem.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookGridItem.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookGridItem.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookGridItem.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/BookManager.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookManager.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookManager.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookManager.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/BookPreferences.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookPreferences.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookPreferences.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/BookPreferences.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/Books3App.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Books3App.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Books3App.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Books3App.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/CbrConverter.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbrConverter.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbrConverter.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbrConverter.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/CbzConverter.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbzConverter.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbzConverter.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/CbzConverter.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/ContentView.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/EpubExtractor.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/EpubExtractor.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/EpubExtractor.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/EpubExtractor.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/Fb2Converter.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Fb2Converter.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Fb2Converter.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Fb2Converter.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/MobiConverter.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/MobiConverter.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/MobiConverter.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/MobiConverter.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/Platform.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Platform.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Platform.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/Platform.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/ReaderContainerView.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderContainerView.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderContainerView.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderContainerView.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/ReaderSettings.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderSettings.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderSettings.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderSettings.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/ReaderView.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderView.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderView.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ReaderView.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/ThumbnailGenerator.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ThumbnailGenerator.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ThumbnailGenerator.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/ThumbnailGenerator.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/iosApp/iOSApp.swift" : {
+    "index-unit-output-path" : "/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iOSApp.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iOSApp.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/iosApp.build/Release/iosApp.build/Objects-normal/arm64/iOSApp.o"
+  }
+}

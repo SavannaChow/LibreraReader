@@ -1,0 +1,4 @@
+module libmobi {
+header "libmobi-Swift.h"
+export *
+}

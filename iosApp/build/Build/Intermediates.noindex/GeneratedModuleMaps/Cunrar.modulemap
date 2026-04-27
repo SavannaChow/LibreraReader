@@ -1,0 +1,4 @@
+module Cunrar {
+umbrella "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/Unrar.swift/Sources/Cunrar/include"
+export *
+}

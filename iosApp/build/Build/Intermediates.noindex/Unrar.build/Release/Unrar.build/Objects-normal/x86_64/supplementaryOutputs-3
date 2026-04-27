@@ -1,0 +1,12 @@
+{
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/Unrar.swift/Sources/Unrar/Archive.swift" : {
+    "abi-baseline-json" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar.abi.json",
+    "const-values" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar-primary.swiftconstvalues",
+    "dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar-primary.d",
+    "diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar-primary.dia",
+    "objc-header" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar-Swift.h",
+    "swiftdoc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar.swiftdoc",
+    "swiftmodule" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar.swiftmodule",
+    "swiftsourceinfo" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/x86_64/Unrar.swiftsourceinfo"
+  }
+}

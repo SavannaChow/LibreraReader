@@ -1,0 +1,4 @@
+module Unrar {
+header "Unrar-Swift.h"
+export *
+}

@@ -1,0 +1,26 @@
+{
+  "" : {
+    "const-values" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary.swiftconstvalues",
+    "dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary.d",
+    "diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary.dia",
+    "emit-module-dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary-emit-module.dia",
+    "pch" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Unrar-primary.swiftdeps"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/Unrar.swift/Sources/Unrar/Archive.swift" : {
+    "index-unit-output-path" : "/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Archive.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Archive.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Archive.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/Unrar.swift/Sources/Unrar/Entry.swift" : {
+    "index-unit-output-path" : "/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Entry.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Entry.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Entry.o"
+  },
+  "/Users/savannachow/Github/LibreraReader/iosApp/build/SourcePackages/checkouts/Unrar.swift/Sources/Unrar/Error.swift" : {
+    "index-unit-output-path" : "/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Error.o",
+    "llvm-bc" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Error.bc",
+    "object" : "/Users/savannachow/Github/LibreraReader/iosApp/build/Build/Intermediates.noindex/Unrar.build/Release/Unrar.build/Objects-normal/arm64/Error.o"
+  }
+}
