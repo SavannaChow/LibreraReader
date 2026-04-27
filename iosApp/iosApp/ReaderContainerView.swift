@@ -19,7 +19,7 @@ struct ReaderContainerView: View {
     @State private var isShowingAddBookmark = false
     @State private var isShowingSearch = false
     @State private var bookmarkText = ""
-    @State private var bookmarkTag = ""
+
     @State private var bookmarkIsFloating = false
     @State private var editingBookmark: BookBookmark?
     @State private var jumpToProgress: Double?
@@ -360,7 +360,7 @@ struct ReaderContainerView: View {
                 title: editingBookmark == nil ? currentPageLabel : "Edit Bookmark",
                 pageLabel: currentPageLabel,
                 text: $bookmarkText,
-                tag: $bookmarkTag,
+
                 isFloating: $bookmarkIsFloating,
                 progress: scrollProgress,
                 onSave: saveBookmarkFromForm,
@@ -426,27 +426,24 @@ struct ReaderContainerView: View {
     private func prepareBookmarkForm() {
         editingBookmark = nil
         bookmarkText = selectedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        bookmarkTag = ""
         bookmarkIsFloating = false
         isShowingAddBookmark = true
     }
 
     private func saveBookmarkFromForm() {
         let cleanText = bookmarkText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanTag = bookmarkTag.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanText.isEmpty else {
             return
         }
 
         if var editingBookmark {
             editingBookmark.text = cleanText
-            editingBookmark.tag = cleanTag
             editingBookmark.isFloating = bookmarkIsFloating
             BookPreferencesManager.shared.updateBookmark(editingBookmark, for: bookPath)
         } else {
             let bookmark = BookBookmark(
+                path: bookPath,
                 text: cleanText,
-                tag: cleanTag,
                 progress: scrollProgress,
                 isFloating: bookmarkIsFloating
             )
@@ -459,8 +456,8 @@ struct ReaderContainerView: View {
 
     private func saveQuickBookmark() {
         let bookmark = BookBookmark(
+            path: bookPath,
             text: currentPageLabel,
-            tag: "",
             progress: scrollProgress,
             isFloating: false
         )
@@ -470,7 +467,6 @@ struct ReaderContainerView: View {
     private func startEditingBookmark(_ bookmark: BookBookmark) {
         editingBookmark = bookmark
         bookmarkText = bookmark.text
-        bookmarkTag = bookmark.tag
         bookmarkIsFloating = bookmark.isFloating
         isShowingBookmarks = false
         isShowingAddBookmark = true
@@ -504,7 +500,6 @@ struct ReaderContainerView: View {
     private func clearBookmarkForm() {
         editingBookmark = nil
         bookmarkText = ""
-        bookmarkTag = ""
         bookmarkIsFloating = false
     }
 
@@ -529,7 +524,6 @@ private struct AddBookmarkView: View {
     let title: String
     let pageLabel: String
     @Binding var text: String
-    @Binding var tag: String
     @Binding var isFloating: Bool
     let progress: Double
     let onSave: () -> Void
@@ -551,8 +545,7 @@ private struct AddBookmarkView: View {
                         .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                 )
 
-            TextField("Tag", text: $tag)
-                .textFieldStyle(.roundedBorder)
+
 
             Toggle("Floating bookmark", isOn: $isFloating)
 
@@ -647,11 +640,7 @@ private struct BookmarkListView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
-                            if !bookmark.tag.isEmpty {
-                                Text("#\(bookmark.tag)")
-                                    .font(.caption)
-                                    .foregroundColor(.accentColor)
-                            }
+
                         }
                         Spacer()
                         Text("\(Int(bookmark.progress * 100))%")
@@ -686,7 +675,6 @@ private struct BookmarkListView: View {
         let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let searched = trimmedSearch.isEmpty ? bookmarks : bookmarks.filter {
             $0.text.localizedCaseInsensitiveContains(trimmedSearch)
-                || $0.tag.localizedCaseInsensitiveContains(trimmedSearch)
         }
 
         switch sort {

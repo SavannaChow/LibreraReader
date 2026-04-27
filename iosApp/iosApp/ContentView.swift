@@ -27,6 +27,7 @@ struct ContentView: View {
         case bookmarks = "Bookmarks"
         case favorites = "Favorites"
         case recent = "Recent Books"
+        case settings = "Settings"
         case about = "About"
         var id: String { rawValue }
         var icon: String {
@@ -35,6 +36,7 @@ struct ContentView: View {
             case .bookmarks: return "bookmark"
             case .favorites: return "star"
             case .recent: return "clock"
+            case .settings: return "gearshape"
             case .about: return "info.circle"
             }
         }
@@ -94,14 +96,15 @@ struct ContentView: View {
             return bookManager.favoriteBooks.count
         case .recent:
             return bookManager.recentBooks.count
-        case .about:
+        case .settings, .about:
             return 0
         }
     }
     
     var body: some View {
+        let _ = bookManager.forceUpdateTrigger
         NavigationSplitView {
-            List(NavigationCategory.allCases.filter { $0 != .about }, selection: $selectedCategory) { category in
+            List(NavigationCategory.allCases.filter { $0 != .about && $0 != .settings }, selection: $selectedCategory) { category in
                 NavigationLink(value: category) {
                     HStack {
                         Label(category.rawValue, systemImage: category.icon)
@@ -120,11 +123,14 @@ struct ContentView: View {
             Spacer()
             
             List(selection: $selectedCategory) {
+                NavigationLink(value: NavigationCategory.settings) {
+                    Label(NavigationCategory.settings.rawValue, systemImage: NavigationCategory.settings.icon)
+                }
                 NavigationLink(value: NavigationCategory.about) {
                     Label(NavigationCategory.about.rawValue, systemImage: NavigationCategory.about.icon)
                 }
             }
-            .frame(height: 50)
+            .frame(height: 80)
             
             .navigationTitle("Librera")
         } detail: {
@@ -139,6 +145,8 @@ struct ContentView: View {
                         favoritesView
                     case .recent:
                         recentView
+                    case .settings:
+                        settingsView
                     case .about:
                         aboutView
                     }
@@ -300,7 +308,6 @@ struct ContentView: View {
             searchText.isEmpty
                 || entry.bookTitle.localizedCaseInsensitiveContains(searchText)
                 || entry.bookmark.text.localizedCaseInsensitiveContains(searchText)
-                || entry.bookmark.tag.localizedCaseInsensitiveContains(searchText)
         }
 
         return Group {
@@ -308,7 +315,7 @@ struct ContentView: View {
                 ContentUnavailableView(
                     searchText.isEmpty ? "No Bookmarks" : "No Matching Bookmarks",
                     systemImage: "bookmark.slash",
-                    description: Text(searchText.isEmpty ? "Bookmarks you create while reading will appear here." : "Try searching by book title, bookmark text, or tag.")
+                    description: Text(searchText.isEmpty ? "Bookmarks you create while reading will appear here." : "Try searching by book title or bookmark text.")
                 )
             } else {
                 List(filteredBookmarks) { entry in
@@ -382,6 +389,83 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(PlatformColor.windowBackgroundColor))
+    }
+    
+    @StateObject private var localSyncManager = LocalSyncManager.shared
+    
+    private var settingsView: some View {
+        Form {
+            Section(header: Text("Google Drive / Local Folder Sync").font(.headline)) {
+                HStack {
+                    Text("Sync Folder:")
+                    Text(localSyncManager.syncFolderURLPath.isEmpty ? "Not Selected" : localSyncManager.syncFolderURLPath)
+                        .foregroundColor(localSyncManager.syncFolderURLPath.isEmpty ? .secondary : .primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button("Select Folder") {
+                        localSyncManager.selectFolder()
+                    }
+                }
+                
+                if let error = localSyncManager.lastSyncError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+                
+                HStack {
+                    Button(action: {
+                        syncBookmarks()
+                    }) {
+                        if localSyncManager.isSyncing {
+                            ProgressView()
+                                .controlSize(.small)
+                                .padding(.trailing, 4)
+                        }
+                        Text(localSyncManager.isSyncing ? "Syncing..." : "Sync Now")
+                    }
+                    .disabled(!localSyncManager.isConfigured || localSyncManager.isSyncing)
+                    #if os(macOS)
+                    .buttonStyle(.borderedProminent)
+                    #endif
+                }
+                .padding(.top, 8)
+            }
+            .padding()
+        }
+        .navigationTitle("Settings")
+        #if os(macOS)
+        .padding()
+        #endif
+    }
+    
+    private func syncBookmarks() {
+        localSyncManager.isSyncing = true
+        localSyncManager.lastSyncError = nil
+        
+        // Gather local bookmarks
+        let bookPaths = Array(Set((bookManager.books + bookManager.favoriteBooks + bookManager.recentBooks).map { $0.url.path }))
+        let localBookmarks = BookPreferencesManager.shared.allBookmarks(for: bookPaths)
+        
+        localSyncManager.syncBookmarks(localBookmarks: localBookmarks) { result in
+            DispatchQueue.main.async {
+                self.localSyncManager.isSyncing = false
+                switch result {
+                case .success(let mergedBookmarks):
+                    // Save merged bookmarks locally
+                    for (path, bookmarks) in mergedBookmarks {
+                        var pref = BookPreferencesManager.shared.load(for: path)
+                        pref.bookmarks = bookmarks
+                        BookPreferencesManager.shared.save(pref, for: path)
+                    }
+                    // Refresh current view if needed
+                    self.bookManager.forceUpdate()
+                case .failure(let error):
+                    self.localSyncManager.lastSyncError = error.localizedDescription
+                }
+            }
+        }
     }
     
     private func bookListView(books: [Book], title: String, isRecent: Bool) -> some View {
@@ -707,15 +791,6 @@ private struct BookmarkLibraryRow: View {
                 HStack(spacing: 8) {
                     Text(entry.bookTitle)
                         .font(.headline)
-                    if !entry.bookmark.tag.isEmpty {
-                        Text("#\(entry.bookmark.tag)")
-                            .font(.caption)
-                            .foregroundColor(.accentColor)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.accentColor.opacity(0.12))
-                            .clipShape(Capsule())
-                    }
                 }
 
                 Text(entry.bookmark.text)

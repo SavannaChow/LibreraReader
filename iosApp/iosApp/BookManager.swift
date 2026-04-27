@@ -25,6 +25,11 @@ class BookManager {
     var recentBookPaths: [String] = []
     var favoriteBookPaths: [String] = []
     var requestToOpenURL: URL?
+    var forceUpdateTrigger = UUID()
+    
+    func forceUpdate() {
+        forceUpdateTrigger = UUID()
+    }
     
     private let bookmarkKey = "LastOpenedFolderBookmark"
     private let recentBooksKey = "RecentBookPaths"

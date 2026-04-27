@@ -2,11 +2,49 @@ import Foundation
 
 struct BookBookmark: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
+    var path: String?
     var text: String
-    var tag: String = ""
-    var progress: Double
-    var isFloating: Bool = false
-    var createdAt: Date = Date()
+    var p: Double
+    var t: Int64
+    var isF: Bool = false
+    
+    var progress: Double {
+        get { p }
+        set { p = newValue }
+    }
+    
+    var isFloating: Bool {
+        get { isF }
+        set { isF = newValue }
+    }
+    
+    var createdAt: Date {
+        get { Date(timeIntervalSince1970: TimeInterval(t) / 1000.0) }
+        set { t = Int64(newValue.timeIntervalSince1970 * 1000.0) }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, path, text, p, t, isF
+    }
+    
+    init(id: UUID = UUID(), path: String? = nil, text: String, progress: Double, isFloating: Bool = false, createdAt: Date = Date()) {
+        self.id = id
+        self.path = path
+        self.text = text
+        self.p = progress
+        self.isF = isFloating
+        self.t = Int64(createdAt.timeIntervalSince1970 * 1000.0)
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decodeIfPresent(UUID.self, forKey: .id)) ?? UUID()
+        self.path = try? container.decodeIfPresent(String.self, forKey: .path)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.p = try container.decode(Double.self, forKey: .p)
+        self.t = try container.decode(Int64.self, forKey: .t)
+        self.isF = (try? container.decodeIfPresent(Bool.self, forKey: .isF)) ?? false
+    }
 }
 
 struct BookPreference: Codable {
@@ -31,6 +69,23 @@ struct BookPreference: Codable {
     var hyphenationLanguage: ReaderSettings.HyphenationLanguage {
         get { ReaderSettings.HyphenationLanguage(rawValue: hyphenationLanguageCode) ?? .auto }
         set { hyphenationLanguageCode = newValue.rawValue }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case fontSize, fontFamily, themeName, textAlignmentName, hyphenationLanguageCode, scrollProgress, bookmarks
+    }
+    
+    init() {}
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.fontSize = try container.decodeIfPresent(Double.self, forKey: .fontSize) ?? 22.0
+        self.fontFamily = try container.decodeIfPresent(String.self, forKey: .fontFamily) ?? "Serif"
+        self.themeName = try container.decodeIfPresent(String.self, forKey: .themeName) ?? "sepia"
+        self.textAlignmentName = try container.decodeIfPresent(String.self, forKey: .textAlignmentName) ?? "justify"
+        self.hyphenationLanguageCode = try container.decodeIfPresent(String.self, forKey: .hyphenationLanguageCode) ?? "auto"
+        self.scrollProgress = try container.decodeIfPresent(Double.self, forKey: .scrollProgress) ?? 0.0
+        self.bookmarks = (try? container.decodeIfPresent([BookBookmark].self, forKey: .bookmarks)) ?? []
     }
     
     func toReaderSettings() -> ReaderSettings {
