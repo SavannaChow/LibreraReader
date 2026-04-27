@@ -1,2 +1,0 @@
-[2026-04-27 13:37:38] [from Darwin SavannaMacBookPro-9.local]  3719  ./build.sh
-[2026-04-27 13:37:43] [from Darwin SavannaMacBookPro-9.local]  3719  ./build.sh
