@@ -63,6 +63,7 @@ struct ReaderContainerView: View {
                             } label: {
                                 Image(systemName: "magnifyingglass")
                             }
+                            .keyboardShortcut("f", modifiers: .command)
 
                             Button {
                                 isShowingBookmarks = true
@@ -194,6 +195,7 @@ struct ReaderContainerView: View {
                     } label: {
                         Image(systemName: "magnifyingglass")
                     }
+                    .keyboardShortcut("f", modifiers: .command)
 
                     Button {
                         isShowingBookmarks = true
@@ -299,6 +301,7 @@ struct ReaderContainerView: View {
                     } label: {
                         Label("Search", systemImage: "magnifyingglass")
                     }
+                    .keyboardShortcut("f", modifiers: .command)
                 }
 
                 ToolbarItem(placement: .automatic) {
